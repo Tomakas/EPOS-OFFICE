@@ -99,7 +99,7 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
+            icon: const Icon(Icons.filter_alt_sharp, color: Colors.white),
             tooltip: 'Filtry',
             onPressed: () {
               _showFilterDialog(context);

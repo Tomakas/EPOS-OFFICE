@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/product_provider.dart';
 import '../models/product.dart';
 import '../services/api_service.dart';
@@ -21,39 +22,36 @@ class EditProductScreen extends StatefulWidget {
 
 class _EditProductScreenState extends State<EditProductScreen> {
   String? _selectedCategoryId; // Vybraná kategorie
-  String? _selectedTaxId; // Vybraná daňová sazba
-  int _selectedColor = 1; // Výchozí barva
-  bool _onSale = true; // Výchozí hodnota "na prodej"
+  String? _selectedTaxId;     // Vybraná daňová sazba
+  int _selectedColor = 1;     // Výchozí barva
+  bool _onSale = true;        // Výchozí hodnota "na prodej"
+
   List<Map<String, dynamic>> _taxSettings = []; // Načtené sazby DPH
 
-  final TextEditingController _nameController =
-  TextEditingController(); // Pro název produktu
-  final TextEditingController _priceController =
-  TextEditingController(); // Pro cenu produktu
-  final TextEditingController _skuController =
-  TextEditingController(); // Pro SKU (editovatelné)
-  final TextEditingController _codeController =
-  TextEditingController(); // Pro kód produktu
-  final TextEditingController _noteController =
-  TextEditingController(); // Pro poznámku
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _skuController = TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
+  final TextEditingController _noteController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Předvyplnění hodnot pro úpravů produktu
+
+    // Pokud jde o úpravu produktu, předvyplníme formulář
     if (widget.product != null) {
       _nameController.text = widget.product!.itemName;
       _priceController.text = widget.product!.price.toStringAsFixed(2);
-      _skuController.text = widget.product!.sku ?? ''; // SKU, pokud existuje
-      _codeController.text = widget.product!.code.toString(); // Code jako text
-      _noteController.text = widget.product!.note ?? ''; // Note, pokud existuje
+      _skuController.text = widget.product!.sku ?? '';
+      _codeController.text = widget.product!.code.toString();
+      _noteController.text = widget.product!.note ?? '';
       _selectedCategoryId = widget.product!.categoryId;
       _selectedTaxId = widget.product!.taxId;
       _selectedColor = widget.product!.color;
       _onSale = widget.product!.onSale;
     }
 
-    _loadTaxSettings(); // Načtení daňových sazeb
+    _loadTaxSettings(); // Načtení daňových sazeb z API
   }
 
   Future<void> _loadTaxSettings() async {
@@ -187,7 +185,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
         Text(localizations.translate('color'), style: const TextStyle(fontSize: 16)),
         const SizedBox(height: 8),
         SingleChildScrollView(
-          scrollDirection: Axis.horizontal, // Zabrání overflow
+          scrollDirection: Axis.horizontal,
           child: Row(
             children: List.generate(colors.length, (index) {
               final colorIndex = index + 1; // Barvy jsou číslovány od 1 do 8
@@ -228,9 +226,10 @@ class _EditProductScreenState extends State<EditProductScreen> {
           isExpanded: true,
           hint: Text(localizations.translate('selectTaxRate')),
           items: _taxSettings.map((tax) {
+            final percent = (tax['percent'] ?? 0) * 100;
             return DropdownMenuItem<String>(
               value: tax['taxId'],
-              child: Text('${tax['name']} (${(tax['percent'] ?? 0) * 100}%)'),
+              child: Text('${tax['name']} (${percent}%)'),
             );
           }).toList(),
           onChanged: (value) {
@@ -260,7 +259,9 @@ class _EditProductScreenState extends State<EditProductScreen> {
     );
   }
 
+  /// Uloží / přidá produkt a vrátí se s hodnotou `true`, pokud došlo ke změně
   Future<void> _saveProduct() async {
+    // Základní validace – vyžadovaná pole
     if (_nameController.text.isEmpty ||
         _priceController.text.isEmpty ||
         _selectedCategoryId == null ||
@@ -271,6 +272,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       return;
     }
 
+    // Sestavíme instanci produktu
     final newProduct = Product(
       itemId: widget.product?.itemId ?? '',
       itemName: _nameController.text,
@@ -280,22 +282,24 @@ class _EditProductScreenState extends State<EditProductScreen> {
       note: _noteController.text,
       categoryId: _selectedCategoryId!,
       categoryName: widget.categories
-        .firstWhere((c) => c['categoryId'] == _selectedCategoryId)['name'],
+          .firstWhere((c) => c['categoryId'] == _selectedCategoryId)['name'],
       currency: 'CZK',
       taxId: _selectedTaxId!,
       color: _selectedColor,
       onSale: _onSale,
     );
 
+    // Zavoláme provider
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
     if (widget.product == null) {
+      // Nový produkt
       await productProvider.addProduct(newProduct);
     } else {
+      // Editace existujícího produktu
       await productProvider.editProduct(newProduct);
     }
 
-    Navigator.of(context).pop();
+    // Po úspěšném dokončení popneme obrazovku s hodnotou `true`, abychom věděli, že došlo ke změně
+    Navigator.of(context).pop(true);
   }
 }
-
-

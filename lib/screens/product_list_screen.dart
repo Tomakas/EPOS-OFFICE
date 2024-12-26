@@ -1,7 +1,6 @@
-// lib/screens/product_list_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/product_provider.dart';
 import '../models/product.dart';
 import '../widgets/product_widget.dart';
@@ -37,15 +36,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
     super.initState();
     _loadPreferences();
     productProvider = Provider.of<ProductProvider>(context, listen: false);
+
+    // Načteme kategorie a produkty (asynchronně)
     productProvider.fetchCategories();
     productProvider.fetchProducts().then((_) {
       _applyAllFiltersAndSorting(productProvider);
     });
+
+    // Případ, kdy dojde ke změně v productProvider (např. fetchProducts)
     productProvider.addListener(_onProductProviderChange);
+
     _loadStockData();
   }
 
   void _onProductProviderChange() {
+    // Kdykoli se změní data v provideru, znovu aplikujeme filtry a sort
     _applyAllFiltersAndSorting(productProvider);
   }
 
@@ -105,8 +110,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localizations.translate('productsTitle'),
-            style: TextStyle(color: Colors.white)),
+        title: Text(
+          localizations.translate('productsTitle'),
+          style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.grey[850],
         actions: <Widget>[
           IconButton(
@@ -144,11 +151,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 border: const OutlineInputBorder(),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16.0),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
               ),
-              onChanged: (value) =>
-                  _applySearch(value, productProvider),
+              onChanged: (value) => _applySearch(value, productProvider),
             ),
           ),
         )
@@ -163,7 +168,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 ? Center(
               child: Text(
                 localizations.translate('noProductsAvailable'),
-                style: TextStyle(fontSize: 16),
+                style: const TextStyle(fontSize: 16),
               ),
             )
                 : ListView.builder(
@@ -192,17 +197,25 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final productProvider =
-          Provider.of<ProductProvider>(context, listen: false);
+          // Když přidáváme nový produkt
+          final productProvider = Provider.of<ProductProvider>(context, listen: false);
           await productProvider.fetchCategories();
-          Navigator.of(context).push(
+
+          // Přejdeme na EditProductScreen a počkáme, co vrátí (pop)
+          final result = await Navigator.of(context).push<bool?>(
             MaterialPageRoute(
               builder: (context) => EditProductScreen(
                 categories: productProvider.categories,
-                product: null,
+                product: null, // null znamená vytváření nového produktu
               ),
             ),
           );
+
+          // Pokud nám EditProductScreen vrátil true, došlo ke změně → znovu načíst
+          if (result == true) {
+            await productProvider.fetchProducts();
+            _applyAllFiltersAndSorting(productProvider);
+          }
         },
         backgroundColor: Colors.grey[850],
         child: const Icon(Icons.add, color: Colors.white),
@@ -288,8 +301,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   void _showCategoryFilterDialog(BuildContext context) async {
-    final productProvider =
-    Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
     final localizations = AppLocalizations.of(context)!;
 
     await productProvider.fetchCategories();
@@ -377,14 +389,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   void _applyAllFiltersAndSorting(ProductProvider provider) {
     final filtered = provider.products.where((product) {
-      final matchesCategory = (currentCategoryId == null || currentCategoryId!.isEmpty) ||
-          product.categoryId == currentCategoryId;
+      final matchesCategory =
+          (currentCategoryId == null || currentCategoryId!.isEmpty) ||
+              product.categoryId == currentCategoryId;
       final matchesOnSale = !showOnlyOnSale || product.onSale;
       final matchesInStock = !showOnlyInStock ||
           (product.sku != null && stockData[product.sku] != null && stockData[product.sku]! > 0);
       final matchesSearch = searchText.isEmpty ||
-          Utility.normalizeString(product.itemName.toLowerCase()).contains(
-              Utility.normalizeString(searchText.toLowerCase()));
+          Utility.normalizeString(product.itemName.toLowerCase())
+              .contains(Utility.normalizeString(searchText.toLowerCase()));
+
       return matchesCategory && matchesOnSale && matchesInStock && matchesSearch;
     }).toList();
 

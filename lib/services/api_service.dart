@@ -141,11 +141,14 @@ class ApiService {
     final url = Uri.parse('$baseUrl/item/add-sale-item');
     print('Přidání produktu: $url');
 
+    final productJson = product.toJson();
+    print('JSON tělo požadavku: $productJson');
+
     await _makeRequest(
       url,
       apiKey,
       method: 'POST',
-      body: product.toJson(),
+      body: productJson,
     );
 
     print('Produkt úspěšně přidán.');
@@ -175,6 +178,7 @@ class ApiService {
     print('Mazání produktu: $url');
 
     final body = {'itemId': itemId};
+
 
     await _makeRequest(
       url,
