@@ -65,8 +65,7 @@
   "filterTitle": "Filtry pro účtenky",
   "cashFilter": "Hotově",
   "cardFilter": "Kartou",
-  "bankFilter": "Převodem",
-  "bankFilter": "Převodem",
+
   "otherFilter": "Jiné",
   "discountFilter": "Pouze slevy",
   "cancel": "Zrušit",

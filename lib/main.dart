@@ -7,7 +7,6 @@ import 'providers/product_provider.dart';
 import 'providers/customer_provider.dart';
 import 'services/utility_services.dart';
 import 'l10n/app_localizations.dart';
-import '../providers/product_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
