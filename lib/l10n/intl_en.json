@@ -118,6 +118,10 @@
   "delete": "Delete",
   "changeStock": "Change stock",
   "changeStockTitle": "Change Stock Status",
+
+  "createProduct": "Create product",
+
+
   "confirm": "Confirm",
   "deleteProduct": "Delete product",
   "confirmDelete": "Are you sure you want to delete this product?",

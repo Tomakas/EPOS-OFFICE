@@ -118,5 +118,7 @@
   "confirm": "Potvrdit",
   "deleteProduct": "Smazat produkt",
   "confirmDelete": "Opravdu chcete tento produkt smazat?",
-  "productDeleted": "Produkt byl smazán"
+  "productDeleted": "Produkt byl smazán",
+
+  "createProduct": "Vytvořit product"
 }

@@ -7,13 +7,15 @@ import '../services/api_service.dart';
 import '../l10n/app_localizations.dart';
 
 class EditProductScreen extends StatefulWidget {
-  final List<Map<String, dynamic>> categories; // Seznam kategorií načtený z API
-  final Product? product; // Produkt při editaci, null při vytváření nového produktu
+  final List<Map<String, dynamic>> categories;
+  final Product? product;
+  final bool isCopy; // Nový parametr
 
   const EditProductScreen({
     super.key,
     required this.categories,
     this.product,
+    this.isCopy = false, // Defaultně false
   });
 
   @override
@@ -21,12 +23,11 @@ class EditProductScreen extends StatefulWidget {
 }
 
 class _EditProductScreenState extends State<EditProductScreen> {
-  String? _selectedCategoryId; // Vybraná kategorie
-  String? _selectedTaxId;     // Vybraná daňová sazba
-  int _selectedColor = 1;     // Výchozí barva
-  bool _onSale = true;        // Výchozí hodnota "na prodej"
-
-  List<Map<String, dynamic>> _taxSettings = []; // Načtené sazby DPH
+  String? _selectedCategoryId;
+  String? _selectedTaxId;
+  int _selectedColor = 1;
+  bool _onSale = true;
+  List<Map<String, dynamic>> _taxSettings = [];
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
@@ -37,9 +38,15 @@ class _EditProductScreenState extends State<EditProductScreen> {
   @override
   void initState() {
     super.initState();
+    _loadTaxSettings();
 
-    // Pokud jde o úpravu produktu, předvyplníme formulář
+    // Rozlišení mezi edit, new a copy:
     if (widget.product != null) {
+      // Když existuje widget.product
+      // a) je to EDIT (widget.isCopy == false)
+      // b) je to COPY (widget.isCopy == true)
+      //
+      // V obou případech vyplníme formulář daty z původního produktu
       _nameController.text = widget.product!.itemName;
       _priceController.text = widget.product!.price.toStringAsFixed(2);
       _skuController.text = widget.product!.sku ?? '';
@@ -49,9 +56,16 @@ class _EditProductScreenState extends State<EditProductScreen> {
       _selectedTaxId = widget.product!.taxId;
       _selectedColor = widget.product!.color;
       _onSale = widget.product!.onSale;
-    }
 
-    _loadTaxSettings(); // Načtení daňových sazeb z API
+      // Pokud je to COPY, vynulujeme itemId,
+      // aby API bralo tento produkt jako nový (a vygenerovalo nové itemId).
+      if (widget.isCopy) {
+        // Případně můžete vynulovat i code, sku apod.
+        // Ale obvykle se duplikují i tyto hodnoty - je to na vás.
+      }
+    }
+    // Pokud je product == null => je to vyloženě nový produkt
+    // => formulář je prázdný, nic nevyplňujeme
   }
 
   Future<void> _loadTaxSettings() async {
@@ -80,9 +94,18 @@ class _EditProductScreenState extends State<EditProductScreen> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
+    // Nastavíme nadpis obrazovky
+    // 1) Pokud product == null => "Vytvoření produktu"
+    // 2) Pokud product != null && isCopy => "Vytvoření produktu" (kopie)
+    // 3) Jinak => "Upravit produkt"
+    final bool isCreating = (widget.product == null || widget.isCopy);
+    final screenTitle = isCreating
+        ? localizations.translate('createProduct')
+        : localizations.translate('editProduct');
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(localizations.translate('editProduct')),
+        title: Text(screenTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -188,7 +211,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: List.generate(colors.length, (index) {
-              final colorIndex = index + 1; // Barvy jsou číslovány od 1 do 8
+              final colorIndex = index + 1;
               return GestureDetector(
                 onTap: () {
                   setState(() {
@@ -259,22 +282,28 @@ class _EditProductScreenState extends State<EditProductScreen> {
     );
   }
 
-  /// Uloží / přidá produkt a vrátí se s hodnotou `true`, pokud došlo ke změně
   Future<void> _saveProduct() async {
-    // Základní validace – vyžadovaná pole
+    final localizations = AppLocalizations.of(context)!;
+
+    // Základní validace
     if (_nameController.text.isEmpty ||
         _priceController.text.isEmpty ||
         _selectedCategoryId == null ||
         _selectedTaxId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.translate('fillAllFields'))),
+        SnackBar(content: Text(localizations.translate('fillAllFields'))),
       );
       return;
     }
 
-    // Sestavíme instanci produktu
+    // Rozhodneme, zda se jedná o novou entitu nebo editaci
+    final bool isCreating = (widget.product == null || widget.isCopy);
+
+    // Pokud je to nová entita => itemId prázdný (aby se na serveru vytvořil nový)
+    final itemId = isCreating ? '' : (widget.product?.itemId ?? '');
+
     final newProduct = Product(
-      itemId: widget.product?.itemId ?? '',
+      itemId: itemId,
       itemName: _nameController.text,
       price: double.parse(_priceController.text),
       sku: _skuController.text,
@@ -289,17 +318,16 @@ class _EditProductScreenState extends State<EditProductScreen> {
       onSale: _onSale,
     );
 
-    // Zavoláme provider
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
-    if (widget.product == null) {
-      // Nový produkt
+
+    if (isCreating) {
+      // Vytvoření nového produktu
       await productProvider.addProduct(newProduct);
     } else {
-      // Editace existujícího produktu
+      // Editace stávajícího produktu
       await productProvider.editProduct(newProduct);
     }
 
-    // Po úspěšném dokončení popneme obrazovku s hodnotou `true`, abychom věděli, že došlo ke změně
-    Navigator.of(context).pop(true);
+    Navigator.of(context).pop(true); // Vrátíme se s hodnotou true => "došlo ke změně"
   }
 }

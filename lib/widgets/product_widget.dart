@@ -1,15 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
 import '../models/product.dart';
+import '../providers/product_provider.dart';
 import '../screens/edit_product_screen.dart';
 import '../l10n/app_localizations.dart';
+
+/// Pokud nemáte nikde definovanou mapu productColors, můžete ji sem přidat např.:
+/// const Map<int, Color> productColors = {
+///   1: Colors.green,
+///   2: Colors.lightBlue,
+///   3: Colors.blue,
+///   4: Colors.yellow,
+///   5: Colors.orange,
+///   6: Colors.purple,
+///   7: Colors.red,
+///   8: Color(0xFF8B4513), // hnědá
+/// };
 
 class ProductWidget extends StatefulWidget {
   final Product product;
   final List<Map<String, dynamic>> categories;
-  final double? stockQuantity;
-  final bool isExpanded;
-  final VoidCallback onExpand;
+  final double? stockQuantity;    // Množství na skladě, může být null
+  final bool isExpanded;          // Indikace rozbalení widgetu
+  final VoidCallback onExpand;    // Akce při kliknutí na "záhlaví" widgetu
 
   const ProductWidget({
     super.key,
@@ -31,21 +46,24 @@ class _ProductWidgetState extends State<ProductWidget> {
   Widget build(BuildContext context) {
     localizations = AppLocalizations.of(context)!;
 
+    // Najdeme jméno kategorie - pokud nenajdeme, zobrazíme "Neznámá kategorie"
     final categoryName = widget.categories.firstWhere(
-          (category) => category['categoryId'] == widget.product.categoryId,
+          (cat) => cat['categoryId'] == widget.product.categoryId,
       orElse: () => {'name': localizations.translate("unknownCategory")},
     )['name'];
 
+    // Formát pro cenu a sklad (CZ, 2 desetinná místa, bez symbolu)
     final numberFormat = NumberFormat.currency(
       locale: 'cs_CZ',
       symbol: '',
       decimalDigits: 2,
     );
 
+    // Barva proužku dle product.color (1-8)
     final color = productColors[widget.product.color] ?? Colors.grey;
 
     return GestureDetector(
-      onTap: widget.onExpand,
+      onTap: widget.onExpand, // Kliknutí → rozbalit/sbalit detail
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
@@ -65,6 +83,7 @@ class _ProductWidgetState extends State<ProductWidget> {
           alignment: Alignment.topCenter,
           child: Stack(
             children: [
+              // Barevný svislý proužek vlevo
               Positioned(
                 top: 0,
                 bottom: 0,
@@ -80,40 +99,45 @@ class _ProductWidgetState extends State<ProductWidget> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Horní řádek: Jméno, kategorie, cena
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        // Levá část
                         Expanded(
                           flex: 3,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Jméno produktu
                               Text(
                                 widget.product.itemName,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
+                                  // Pokud onSale = false, přeškrtneme
                                   decoration: widget.product.onSale
                                       ? TextDecoration.none
                                       : TextDecoration.lineThrough,
                                 ),
                               ),
                               const SizedBox(height: 4),
+                              // Kategorie
                               Text(
                                 '${localizations.translate("category")}: $categoryName',
                                 style: const TextStyle(color: Colors.grey),
                               ),
                               const SizedBox(height: 4),
+                              // Cena
                               Text(
-                                '${localizations.translate("price")}: ${numberFormat.format(widget.product.price)} Kč',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black,
-                                ),
+                                '${localizations.translate("price")}: '
+                                    '${numberFormat.format(widget.product.price)} Kč',
+                                style: const TextStyle(fontSize: 16),
                               ),
                             ],
                           ),
                         ),
+                        // Pravá část - sklad (pokud je stockQuantity != null)
                         if (widget.stockQuantity != null)
                           Expanded(
                             flex: 1,
@@ -134,12 +158,10 @@ class _ProductWidgetState extends State<ProductWidget> {
                                     TextSpan(
                                       text: numberFormat.format(widget.stockQuantity),
                                       style: TextStyle(
-                                        color: widget.stockQuantity! == 0
-                                            ? Colors.red
-                                            : widget.stockQuantity! < 0
+                                        color: (widget.stockQuantity! <= 0)
                                             ? Colors.red
                                             : Colors.black,
-                                        fontWeight: widget.stockQuantity! < 0
+                                        fontWeight: (widget.stockQuantity! < 0)
                                             ? FontWeight.bold
                                             : FontWeight.normal,
                                         fontSize: 16,
@@ -152,6 +174,7 @@ class _ProductWidgetState extends State<ProductWidget> {
                           ),
                       ],
                     ),
+                    // Rozbalovací část (tlačítka) - pomocí AnimatedCrossFade
                     AnimatedCrossFade(
                       duration: const Duration(milliseconds: 300),
                       crossFadeState: widget.isExpanded
@@ -162,11 +185,13 @@ class _ProductWidgetState extends State<ProductWidget> {
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Row(
                           children: [
+                            // Tlačítka: Edit, Copy, Delete
                             Expanded(
                               flex: 3,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 children: [
+                                  // EDIT
                                   IconButton(
                                     icon: const Icon(Icons.edit, color: Colors.blue),
                                     tooltip: localizations.translate("edit"),
@@ -176,11 +201,14 @@ class _ProductWidgetState extends State<ProductWidget> {
                                           builder: (context) => EditProductScreen(
                                             categories: widget.categories,
                                             product: widget.product,
+                                            // isCopy: false (default), aby šlo o úpravu
                                           ),
                                         ),
                                       );
                                     },
                                   ),
+
+                                  // COPY (duplikace)
                                   IconButton(
                                     icon: const Icon(Icons.copy, color: Colors.green),
                                     tooltip: localizations.translate("copy"),
@@ -189,11 +217,15 @@ class _ProductWidgetState extends State<ProductWidget> {
                                         MaterialPageRoute(
                                           builder: (context) => EditProductScreen(
                                             categories: widget.categories,
+                                            product: widget.product,
+                                            isCopy: true, // Zde je klíč
                                           ),
                                         ),
                                       );
                                     },
                                   ),
+
+                                  // DELETE
                                   IconButton(
                                     icon: const Icon(Icons.delete, color: Colors.red),
                                     tooltip: localizations.translate("delete"),
@@ -204,6 +236,7 @@ class _ProductWidgetState extends State<ProductWidget> {
                                 ],
                               ),
                             ),
+                            // Tlačítko pro změnu skladového stavu (pokud chcete)
                             Expanded(
                               flex: 1,
                               child: Row(
@@ -236,8 +269,10 @@ class _ProductWidgetState extends State<ProductWidget> {
     );
   }
 
+  /// Dialog pro úpravu stavu skladu (jen příklad – není implementováno volání API).
   void _showStockChangeDialog(BuildContext context, {required String title}) {
     int currentValue = 0;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -251,9 +286,7 @@ class _ProductWidgetState extends State<ProductWidget> {
                   IconButton(
                     icon: const Icon(Icons.remove),
                     onPressed: () {
-                      setState(() {
-                        currentValue--;
-                      });
+                      setState(() => currentValue--);
                     },
                   ),
                   SizedBox(
@@ -265,9 +298,9 @@ class _ProductWidgetState extends State<ProductWidget> {
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
-                        final int? parsedValue = int.tryParse(value);
-                        if (parsedValue != null) {
-                          currentValue = parsedValue;
+                        final parsed = int.tryParse(value);
+                        if (parsed != null) {
+                          currentValue = parsed;
                         }
                       },
                     ),
@@ -275,9 +308,7 @@ class _ProductWidgetState extends State<ProductWidget> {
                   IconButton(
                     icon: const Icon(Icons.add),
                     onPressed: () {
-                      setState(() {
-                        currentValue++;
-                      });
+                      setState(() => currentValue++);
                     },
                   ),
                 ],
@@ -285,12 +316,13 @@ class _ProductWidgetState extends State<ProductWidget> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.of(context).pop(); // Zavřít dialog
                   },
                   child: Text(localizations.translate("cancel")),
                 ),
                 TextButton(
                   onPressed: () {
+                    // Zde případně volání API pro update skladu
                     print('$title: $currentValue');
                     Navigator.of(context).pop();
                   },
@@ -304,6 +336,7 @@ class _ProductWidgetState extends State<ProductWidget> {
     );
   }
 
+  /// Potvrzovací dialog pro smazání produktu
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
@@ -311,19 +344,44 @@ class _ProductWidgetState extends State<ProductWidget> {
         return AlertDialog(
           title: Text(localizations.translate("deleteProduct")),
           content: Text(
-            '${localizations.translate("confirmDelete")} ${widget.product.itemName}',
+            '${localizations.translate("confirmDelete")} "${widget.product.itemName}"?',
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Zavřít dialog bez smazání
               },
               child: Text(localizations.translate("cancel")),
             ),
             TextButton(
-              onPressed: () {
-                print(localizations.translate("productDeleted"));
+              onPressed: () async {
+                // Zavřeme dialog
                 Navigator.of(context).pop();
+
+                // Smažeme produkt
+                final productProvider =
+                Provider.of<ProductProvider>(context, listen: false);
+                try {
+                  await productProvider.deleteProduct(widget.product.itemId);
+                  // Tím dojde i k fetchProducts() (dle kódu v ProductProvider),
+                  // a ProductListScreen se díky addListener automaticky zaktualizuje.
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${localizations.translate("productDeleted")}: ${widget.product.itemName}',
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${localizations.translate("deleteError")}: $e',
+                      ),
+                    ),
+                  );
+                }
               },
               child: Text(localizations.translate("delete")),
             ),
