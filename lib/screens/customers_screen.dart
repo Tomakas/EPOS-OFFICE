@@ -1,3 +1,5 @@
+//lib/screens/customers_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/customer_provider.dart';
