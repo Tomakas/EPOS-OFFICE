@@ -1,3 +1,5 @@
+//lib/models/customer.dart
+
 class Customer {
   final String customerId;
   final String name;
