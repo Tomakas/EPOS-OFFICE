@@ -1,3 +1,5 @@
+//lib/models/item_summary.dart
+
 class ItemSummary {
   String name;
   int quantity;
