@@ -1,4 +1,4 @@
-//widgets/dashboard_widgets.dart
+//lib/widgets/dashboard_widgets.dart
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
