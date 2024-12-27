@@ -3,6 +3,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart'; // Import pro Locale a WidgetsBinding
 import 'dart:convert';
+import 'package:intl/intl.dart'; // Důležité pro NumberFormat
 import '../models/dashboard_widget_model.dart'; // Import DashboardWidgetModel
 
 class StorageService {
@@ -80,11 +81,32 @@ class StorageService {
 }
 
 class Utility {
+  /// Metoda pro normální (plain) čísla bez měny.
+  static String formatNumber(num value, {int decimals = 2, String? locale}) {
+    final usedLocale = locale ?? 'cs_CZ';
+    final format = NumberFormat('#,##0.##', usedLocale);
+    // Pokud potřebujete fixní počet desetinných míst, upravte podle potřeby
+    // např. NumberFormat('###,###.00', usedLocale)
+    return format.format(value);
+  }
+
+  /// Metoda pro formátování hodnoty v měně.
+  static String formatCurrency(num value, {String? currencySymbol, String? locale, int decimals = 2}) {
+    final usedLocale = locale ?? 'cs_CZ';
+    // Pokud nechcete vyloženě currency, lze použít NumberFormat.simpleCurrency
+    // Ale s currency() získáte větší kontrolu nad parametry:
+    final format = NumberFormat.currency(
+      locale: usedLocale,
+      symbol: currencySymbol ?? 'Kč',
+      decimalDigits: decimals,
+    );
+    return format.format(value);
+  }
+
   /// Normalizace textu odstraněním diakritiky
   static String normalizeString(String input) {
     const withDiacritics = 'áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ';
     const withoutDiacritics = 'acdeeinorstuuyzACDEEINORSTUUYZ';
-
     return input.split('').map((char) {
       final index = withDiacritics.indexOf(char);
       return index != -1 ? withoutDiacritics[index] : char;

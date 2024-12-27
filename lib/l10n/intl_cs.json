@@ -29,7 +29,7 @@
   "itemText": "Položka",
   "totalValue": "Celková částka",
   "totalReceipts": "Celkem prodejů",
-  "noDateFilter": "Bez filtru data",
+  "noDateFilter": "Bez filtru dat",
   "Product": "Produkt",
   "Amount": "Počet",
   "Total": "Celkem",
@@ -119,5 +119,22 @@
   "confirmDelete": "Opravdu chcete tento produkt smazat?",
   "productDeleted": "Produkt byl smazán",
 
-  "createProduct": "Vytvořit product"
+  "createProduct": "Vytvořit product",
+
+
+  "merge": "Sloučit",
+  "customerSales": "Prodeje",
+  "notAvailable": "N/A",
+  "addNewCustomer": "Přidání nového zákazníka",
+  "dateRangeTooltip": "Rozsah dat",
+  "noReceiptsAvailable": "Žádné účtenky k zobrazení.",
+  "receiptFiltersTitle": "Filtry pro účtenky",
+  "onlyDiscounts": "Pouze slevy",
+  "addNewProduct": "Přidání nového produktu",
+  "noProductsAvailable": "Žádné produkty k zobrazení.",
+  "unknownWidgetType": "Neznámý typ widgetu",
+  "editDashboard": "Upravit dashboard",
+  "finishEditing": "Ukončit úpravy",
+  "selectLanguage": "Vyberte jazyk",
+  "topProducts": "Nejprodávanější produkty"
 }

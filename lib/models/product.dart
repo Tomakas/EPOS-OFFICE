@@ -1,5 +1,3 @@
-//lib/models/product.dart
-
 import 'package:flutter/material.dart';
 
 class Product {
@@ -57,8 +55,8 @@ class Product {
       'price': price,
       'currency': currency,
       'color': color,
-      'sku': sku != null ? int.tryParse(sku!) : null, // Převod na číslo      'categoryId': categoryId,
-      'categoryId': categoryId, // Přidáno podle dokumentace
+      'sku': sku,
+      'categoryId': categoryId,
       'categoryName': categoryName,
       'note': note,
       'onSale': onSale,
@@ -68,12 +66,12 @@ class Product {
 
 // Mapa barev pro čísla barev
 const Map<int, Color> productColors = {
-  1: Colors.green, // Barva 1: zelená
-  2: Colors.lightBlue, // Barva 2: světle modrá
-  3: Colors.blue, // Barva 3: tmavě modrá
-  4: Colors.yellow, // Barva 4: žlutá
-  5: Colors.orange, // Barva 5: oranžová
-  6: Colors.purple, // Barva 6: fialová
-  7: Colors.red, // Barva 7: červená
-  8: Color(0xFF8B4513), // Barva 8: světle hnědá (hnědý odstín)
+  1: Colors.green,           // Barva 1: zelená
+  2: Colors.lightBlue,       // Barva 2: světle modrá
+  3: Colors.blue,            // Barva 3: tmavě modrá
+  4: Colors.yellow,          // Barva 4: žlutá
+  5: Colors.orange,          // Barva 5: oranžová
+  6: Colors.purple,          // Barva 6: fialová
+  7: Colors.red,             // Barva 7: červená
+  8: Color(0xFF8B4513),      // Barva 8: světle hnědá
 };

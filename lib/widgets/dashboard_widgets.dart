@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'dart:math';
 import '../providers/receipt_provider.dart';
 import '../l10n/app_localizations.dart';
+import '../services/utility_services.dart';
 
 Widget buildSummaryBlock(BuildContext context, String value,
     {required bool isEditMode}) {
@@ -108,9 +109,10 @@ Widget buildTopCategoriesTable(
                 Expanded(
                   flex: 3,
                   child: Text(
-                    '${category['revenue'].toStringAsFixed(2)} Kč',
+                    Utility.formatCurrency(category['revenue']),
                     textAlign: TextAlign.right,
                   ),
+
                 ),
               ],
             ),
@@ -186,7 +188,7 @@ Widget buildTopProductsTable(
                 Expanded(
                   flex: 3,
                   child: Text(
-                    '${product['revenue'].toStringAsFixed(2)} Kč',
+                    Utility.formatCurrency(product['revenue']),
                     textAlign: TextAlign.right,
                   ),
                 ),
@@ -268,7 +270,7 @@ Widget buildHourlyRevenueChart(
                         return const Text('');
                       }
                       return Text(
-                        '${value.toInt()} Kč',
+                        Utility.formatCurrency(value, decimals: 0),  // Např. bez desetinných míst
                         style: const TextStyle(fontSize: 12),
                       );
                     },
@@ -335,7 +337,7 @@ Widget buildTodayRevenueBlock(BuildContext context, double todayRevenue,
           ),
         ),
         Text(
-          '${todayRevenue.toStringAsFixed(2)} Kč',
+          Utility.formatCurrency(todayRevenue),
           style: const TextStyle(
             fontSize: 18,
             color: Colors.black,

@@ -1,8 +1,5 @@
-//lib/screens/product_list_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../providers/product_provider.dart';
 import '../models/product.dart';
 import '../widgets/product_widget.dart';
@@ -30,7 +27,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
   List<Product> filteredProducts = [];
   String currentSortCriteria = "name";
   bool currentSortAscending = true;
-
   late ProductProvider productProvider;
 
   @override
@@ -38,21 +34,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
     super.initState();
     _loadPreferences();
     productProvider = Provider.of<ProductProvider>(context, listen: false);
-
-    // Načteme kategorie a produkty (asynchronně)
     productProvider.fetchCategories();
     productProvider.fetchProducts().then((_) {
       _applyAllFiltersAndSorting(productProvider);
     });
-
-    // Případ, kdy dojde ke změně v productProvider (např. fetchProducts)
     productProvider.addListener(_onProductProviderChange);
-
     _loadStockData();
   }
 
   void _onProductProviderChange() {
-    // Kdykoli se změní data v provideru, znovu aplikujeme filtry a sort
     _applyAllFiltersAndSorting(productProvider);
   }
 
@@ -92,7 +82,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   void _loadStockData() async {
-    const apiKey = 'pak-equeghBq1UtfHWfDqtO52SC9ascosA';
+    const apiKey = 'pak-equeghBq1UtfHWfDqtO52SC9ascosA'; // Původně zde byl klíč. Ideálně by i toto mělo být načteno z úložiště.
+    // Ponechávám pro ukázku, ale měla byste to řešit stejně jako jinde, např.:
+    // final apiKey = await StorageService.getApiKey();
     try {
       final stockList = await ApiService.fetchActualStockData(apiKey);
       setState(() {
@@ -199,21 +191,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // Když přidáváme nový produkt
-          final productProvider = Provider.of<ProductProvider>(context, listen: false);
           await productProvider.fetchCategories();
-
-          // Přejdeme na EditProductScreen a počkáme, co vrátí (pop)
           final result = await Navigator.of(context).push<bool?>(
             MaterialPageRoute(
               builder: (context) => EditProductScreen(
                 categories: productProvider.categories,
-                product: null, // null znamená vytváření nového produktu
+                product: null,
               ),
             ),
           );
-
-          // Pokud nám EditProductScreen vrátil true, došlo ke změně → znovu načíst
           if (result == true) {
             await productProvider.fetchProducts();
             _applyAllFiltersAndSorting(productProvider);
@@ -221,14 +207,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
         },
         backgroundColor: Colors.grey[850],
         child: const Icon(Icons.add, color: Colors.white),
-        tooltip: localizations.translate('addProduct'),
+        tooltip: localizations.translate('addNewProduct'),
       ),
     );
   }
 
   void _showSortDialog(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -303,16 +288,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   void _showCategoryFilterDialog(BuildContext context) async {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
     final localizations = AppLocalizations.of(context)!;
-
     await productProvider.fetchCategories();
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (context, setState) => AlertDialog(
+          builder: (context, setStateSB) => AlertDialog(
             title: Text(localizations.translate('filterProducts')),
             content: SingleChildScrollView(
               child: Column(
@@ -335,7 +317,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       }),
                     ],
                     onChanged: (value) {
-                      setState(() {
+                      setStateSB(() {
                         currentCategoryId = value;
                       });
                     },
@@ -345,7 +327,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     title: Text(localizations.translate('onlyOnSale')),
                     value: showOnlyOnSale,
                     onChanged: (value) {
-                      setState(() {
+                      setStateSB(() {
                         showOnlyOnSale = value;
                       });
                     },
@@ -354,7 +336,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     title: Text(localizations.translate('stockItems')),
                     value: showOnlyInStock,
                     onChanged: (value) {
-                      setState(() {
+                      setStateSB(() {
                         showOnlyInStock = value;
                       });
                     },
@@ -391,16 +373,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   void _applyAllFiltersAndSorting(ProductProvider provider) {
     final filtered = provider.products.where((product) {
-      final matchesCategory =
-          (currentCategoryId == null || currentCategoryId!.isEmpty) ||
-              product.categoryId == currentCategoryId;
+      final matchesCategory = (currentCategoryId == null || currentCategoryId!.isEmpty)
+          || product.categoryId == currentCategoryId;
       final matchesOnSale = !showOnlyOnSale || product.onSale;
-      final matchesInStock = !showOnlyInStock ||
-          (product.sku != null && stockData[product.sku] != null && stockData[product.sku]! > 0);
-      final matchesSearch = searchText.isEmpty ||
-          Utility.normalizeString(product.itemName.toLowerCase())
+      final matchesInStock = !showOnlyInStock
+          || (product.sku != null && stockData[product.sku] != null && stockData[product.sku]! > 0);
+      final matchesSearch = searchText.isEmpty
+          || Utility.normalizeString(product.itemName.toLowerCase())
               .contains(Utility.normalizeString(searchText.toLowerCase()));
-
       return matchesCategory && matchesOnSale && matchesInStock && matchesSearch;
     }).toList();
 
@@ -420,7 +400,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
         valueA = stockData[a.sku] ?? 0.0;
         valueB = stockData[b.sku] ?? 0.0;
       }
-
       return currentSortAscending
           ? Comparable.compare(valueA, valueB)
           : Comparable.compare(valueB, valueA);

@@ -1,5 +1,3 @@
-//lib/screens/customers_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/customer_provider.dart';
@@ -14,13 +12,13 @@ class CustomersScreen extends StatefulWidget {
 }
 
 class _CustomersScreenState extends State<CustomersScreen> {
-  String? expandedCustomerEmail; // Unikátní identifikátor bude email zákazníka
+  String? expandedCustomerEmail;
 
   @override
   void initState() {
     super.initState();
     final customerProvider = Provider.of<CustomerProvider>(context, listen: false);
-    customerProvider.fetchCustomers(); // Načtení zákazníků
+    customerProvider.fetchCustomers();
   }
 
   @override
@@ -50,7 +48,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
         itemCount: customerProvider.customers.length,
         itemBuilder: (context, index) {
           final Customer customer = customerProvider.customers[index];
-
           return GestureDetector(
             onTap: () {
               setState(() {
@@ -98,19 +95,23 @@ class _CustomersScreenState extends State<CustomersScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text('${localizations.translate('email')}: ${customer.email ?? 'N/A'}'),
+                                Text(
+                                  '${localizations.translate('email')}: ${customer.email.isNotEmpty ? customer.email : localizations.translate('notAvailable')}',
+                                ),
                                 const SizedBox(height: 4),
-                                Text('${localizations.translate('phone')}: ${customer.phone ?? 'N/A'}'),
+                                Text(
+                                  '${localizations.translate('phone')}: ${customer.phone != null && customer.phone!.isNotEmpty ? customer.phone : localizations.translate('notAvailable')}',
+                                ),
                               ],
                             ),
                           ),
                         ],
                       ),
-
-                      // Animovaný přechod pro zobrazení dodatečných ikon
+                      // Rozbalovací část (tlačítka)
                       AnimatedCrossFade(
                         duration: const Duration(milliseconds: 300),
-                        crossFadeState: expandedCustomerEmail == customer.email
+                        crossFadeState:
+                        expandedCustomerEmail == customer.email
                             ? CrossFadeState.showSecond
                             : CrossFadeState.showFirst,
                         firstChild: const SizedBox.shrink(),
@@ -121,37 +122,53 @@ class _CustomersScreenState extends State<CustomersScreen> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.edit, color: Colors.blue),
-                                tooltip: 'Upravit',
+                                tooltip: localizations.translate('edit'),
                                 onPressed: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Upravit ${customer.name}')),
+                                    SnackBar(
+                                      content: Text(
+                                        '${localizations.translate('edit')} ${customer.name}',
+                                      ),
+                                    ),
                                   );
                                 },
                               ),
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.red),
-                                tooltip: 'Smazat',
+                                tooltip: localizations.translate('delete'),
                                 onPressed: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Smazat ${customer.name}')),
+                                    SnackBar(
+                                      content: Text(
+                                        '${localizations.translate('delete')} ${customer.name}',
+                                      ),
+                                    ),
                                   );
                                 },
                               ),
                               IconButton(
                                 icon: const Icon(Icons.point_of_sale, color: Colors.green),
-                                tooltip: 'Prodeje',
+                                tooltip: localizations.translate('customerSales'),
                                 onPressed: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Prodeje ${customer.name}')),
+                                    SnackBar(
+                                      content: Text(
+                                        '${localizations.translate('customerSales')} ${customer.name}',
+                                      ),
+                                    ),
                                   );
                                 },
                               ),
                               IconButton(
                                 icon: const Icon(Icons.merge_type, color: Colors.orange),
-                                tooltip: 'Sloučit',
+                                tooltip: localizations.translate('merge'),
                                 onPressed: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Sloučit ${customer.name}')),
+                                    SnackBar(
+                                      content: Text(
+                                        '${localizations.translate('merge')} ${customer.name}',
+                                      ),
+                                    ),
                                   );
                                 },
                               ),
@@ -170,7 +187,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Přidání nového zákazníka')),
+            SnackBar(content: Text(localizations.translate('addNewCustomer'))),
           );
         },
         backgroundColor: Colors.grey[850],

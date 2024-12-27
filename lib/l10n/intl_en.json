@@ -125,6 +125,22 @@
   "confirm": "Confirm",
   "deleteProduct": "Delete product",
   "confirmDelete": "Are you sure you want to delete this product?",
-  "productDeleted": "Product has been deleted"
+  "productDeleted": "Product has been deleted",
+
+
+  "merge": "Merge",
+  "customerSales": "Sales",
+  "notAvailable": "N/A",
+  "addNewCustomer": "Add new customer",
+  "dateRangeTooltip": "Date range",
+  "noReceiptsAvailable": "No receipts available.",
+  "receiptFiltersTitle": "Receipt filters",
+  "onlyDiscounts": "Only discounts",
+  "addNewProduct": "Add new product",
+  "noProductsAvailable": "No products available.",
+  "unknownWidgetType": "Unknown widget type",
+  "editDashboard": "Edit dashboard",
+  "finishEditing": "Finish editing",
+  "selectLanguage": "Select language",
 
 }

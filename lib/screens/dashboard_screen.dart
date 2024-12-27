@@ -1,15 +1,12 @@
-// lib/screens/dashboard_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../providers/receipt_provider.dart';
-import '../models/product.dart'; // Přidáno
 import '../l10n/app_localizations.dart';
-import '../widgets/dashboard_widgets.dart' as widgets; // Prefix 'widgets'
-import '../models/dashboard_widget_model.dart' as model; // Prefix 'model'
-import '../services/utility_services.dart'; // Import StorageService
-import 'package:uuid/uuid.dart'; // Pro generování unikátních ID
+import '../widgets/dashboard_widgets.dart' as widgets;
+import '../models/dashboard_widget_model.dart' as model;
+import '../services/utility_services.dart';
+import 'package:uuid/uuid.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -20,8 +17,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late Future<void> _fetchData;
-  bool isEditMode = false; // Stav editačního režimu
-  List<model.DashboardWidgetModel> widgetsList = []; // Seznam widgetů na dashboardu
+  bool isEditMode = false;
+  List<model.DashboardWidgetModel> widgetsList = [];
 
   @override
   void initState() {
@@ -32,9 +29,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadData() async {
     final receiptProvider = Provider.of<ReceiptProvider>(context, listen: false);
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
-    final today = DateTime.now();
 
-    // Nastavení dateRange na aktuální den
+    final today = DateTime.now();
+    // Nastavíme dateRange na aktuální den
     receiptProvider.updateDateRange(
       DateTimeRange(
         start: DateTime(today.year, today.month, today.day),
@@ -42,29 +39,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
 
-    // Načtení produktů před účtenkami
-    await productProvider.fetchProducts(); // Ujistěte se, že máte tuto metodu implementovanou v ProductProvider
+    await productProvider.fetchProducts();  // Nejdříve produkty
+    await receiptProvider.fetchReceipts();  // Pak účtenky
 
-    // Načtení účtenek
-    await receiptProvider.fetchReceipts();
-
-    // Načtení widgetů z SharedPreferences
-    List<model.DashboardWidgetModel> loadedWidgets =
-    await StorageService.getDashboardWidgetsOrder();
-
-    // Pokud není žádný uložený seznam, inicializujte výchozí widgety
+    List<model.DashboardWidgetModel> loadedWidgets = await StorageService.getDashboardWidgetsOrder();
     if (loadedWidgets.isEmpty) {
       loadedWidgets = [
         model.DashboardWidgetModel(id: const Uuid().v4(), type: 'summary'),
         model.DashboardWidgetModel(id: const Uuid().v4(), type: 'top_products'),
-        model.DashboardWidgetModel(id: const Uuid().v4(), type: 'top_categories'), // Přidáno
+        model.DashboardWidgetModel(id: const Uuid().v4(), type: 'top_categories'),
         model.DashboardWidgetModel(id: const Uuid().v4(), type: 'hourly_graph'),
         model.DashboardWidgetModel(id: const Uuid().v4(), type: 'payment_pie_chart'),
         model.DashboardWidgetModel(id: const Uuid().v4(), type: 'today_revenue'),
       ];
       await StorageService.saveDashboardWidgetsOrder(loadedWidgets);
     }
-
     setState(() {
       widgetsList = loadedWidgets;
     });
@@ -101,53 +90,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _showAddWidgetDialog() {
+    final localizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) {
         String? selectedType;
         return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.translate('addWidget')),
+          title: Text(localizations.translate('addWidget')),
           content: DropdownButtonFormField<String>(
             value: selectedType,
             items: [
               DropdownMenuItem(
                 value: 'summary',
-                child: Text(AppLocalizations.of(context)!.translate('summary')),
+                child: Text(localizations.translate('summary')),
               ),
               DropdownMenuItem(
                 value: 'top_products',
-                child: Text(AppLocalizations.of(context)!.translate('topProducts')),
+                child: Text(localizations.translate('topProducts')),
               ),
               DropdownMenuItem(
                 value: 'top_categories',
-                child: Text(AppLocalizations.of(context)!.translate('topCategories')),
+                child: Text(localizations.translate('topCategories')),
               ),
               DropdownMenuItem(
                 value: 'hourly_graph',
-                child: Text(AppLocalizations.of(context)!.translate('hourlyGraph')),
+                child: Text(localizations.translate('hourlyGraph')),
               ),
               DropdownMenuItem(
                 value: 'payment_pie_chart',
-                child: Text(AppLocalizations.of(context)!.translate('paymentPieChart')),
+                child: Text(localizations.translate('paymentPieChart')),
               ),
               DropdownMenuItem(
                 value: 'today_revenue',
-                child: Text(AppLocalizations.of(context)!.translate('todayRevenue')),
+                child: Text(localizations.translate('todayRevenue')),
               ),
             ],
             onChanged: (value) {
               selectedType = value;
             },
             decoration: InputDecoration(
-              labelText: AppLocalizations.of(context)!.translate('selectWidgetType'),
+              labelText: localizations.translate('selectWidgetType'),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Zavřít dialog
+                Navigator.of(context).pop();
               },
-              child: Text(AppLocalizations.of(context)!.translate('cancel')),
+              child: Text(localizations.translate('cancel')),
             ),
             TextButton(
               onPressed: () {
@@ -156,7 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.of(context).pop();
                 }
               },
-              child: Text(AppLocalizations.of(context)!.translate('add')),
+              child: Text(localizations.translate('add')),
             ),
           ],
         );
@@ -164,37 +154,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildDashboardContent(BuildContext context, AppLocalizations localizations) {
-    final receiptProvider = Provider.of<ReceiptProvider>(context);
-    final receipts = receiptProvider.receipts;
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
 
-    final int todayReceiptsCount = receipts.length;
-    final double todaySales = receipts.fold(
-      0.0,
-          (sum, receipt) => sum + (receipt['total'] as num).toDouble(),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          localizations.translate('dashboardTitle'),
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.grey[850],
+        actions: [
+          if (!isEditMode)
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.white),
+              tooltip: localizations.translate('editDashboard'),
+              onPressed: _enterEditMode,
+            ),
+          if (isEditMode) ...[
+            IconButton(
+              icon: const Icon(Icons.check, color: Colors.white),
+              tooltip: localizations.translate('finishEditing'),
+              onPressed: _exitEditMode,
+            ),
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.white),
+              tooltip: localizations.translate('addWidget'),
+              onPressed: _showAddWidgetDialog,
+            ),
+          ],
+        ],
+      ),
+      body: FutureBuilder<void>(
+        future: _fetchData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                '${localizations.translate('errorLoadingData')}: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          } else {
+            return _buildDashboardContent(context, localizations);
+          }
+        },
+      ),
     );
+  }
 
-    final Map<String, Map<String, dynamic>> productData = {};
-    for (var receipt in receipts) {
-      for (var item in receipt['items']) {
-        if (!productData.containsKey(item['text'])) {
-          productData[item['text']] = {
-            'name': item['text'],
-            'quantity': 0.0,
-            'revenue': 0.0,
-          };
-        }
-        productData[item['text']]!['quantity'] +=
-            (item['quantity'] as num).toDouble();
-        productData[item['text']]!['revenue'] +=
-            (item['priceToPay'] as num).toDouble();
-      }
-    }
-
-    final topProducts = productData.values.toList()
-      ..sort((a, b) => b['revenue'].compareTo(a['revenue']));
-    final displayedTopProducts = topProducts.take(5).toList();
-
+  Widget _buildDashboardContent(BuildContext context, AppLocalizations localizations) {
     return ReorderableListView(
       padding: const EdgeInsets.all(16.0),
       proxyDecorator: (child, index, animation) {
@@ -221,12 +233,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onLongPress: isEditMode
                 ? null
                 : () {
-              setState(() {
-                if (widgetModel.type == 'summary') {
-                  // Například: zobrazit detail summary
-                }
-                // Přidejte další logiku pro různé typy widgetů
-              });
+              // Do something on long press in normal mode (optional)
             },
             child: Stack(
               children: [
@@ -244,7 +251,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       BoxShadow(
                         color: Colors.black26,
                         blurRadius: 10,
-                        offset: Offset(4, 8),
+                        offset: const Offset(4, 8),
                         spreadRadius: 10,
                       ),
                     ]
@@ -258,7 +265,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: _buildWidgetContent(widgetModel.type, receiptProvider, localizations),
+                    child: _buildWidgetContent(widgetModel.type),
                   ),
                 ),
                 if (isEditMode)
@@ -289,45 +296,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildWidgetContent(
-      String type, ReceiptProvider receiptProvider, AppLocalizations localizations) {
+  Widget _buildWidgetContent(String type) {
+    final receiptProvider = Provider.of<ReceiptProvider>(context, listen: false);
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final localizations = AppLocalizations.of(context)!;
+
     switch (type) {
       case 'summary':
+      // Zobrazení počtu účtenek
         return widgets.buildSummaryBlock(
           context,
           '${receiptProvider.receipts.length}',
           isEditMode: isEditMode,
         );
+
       case 'top_products':
-        final Map<String, Map<String, dynamic>> productData = {};
-        for (var receipt in receiptProvider.receipts) {
-          for (var item in receipt['items']) {
-            if (!productData.containsKey(item['text'])) {
-              productData[item['text']] = {
-                'name': item['text'],
-                'quantity': 0.0,
-                'revenue': 0.0,
-              };
-            }
-            productData[item['text']]!['quantity'] +=
-                (item['quantity'] as num).toDouble();
-            productData[item['text']]!['revenue'] +=
-                (item['priceToPay'] as num).toDouble();
-          }
-        }
+      // Zavolání nově definované metody v ReceiptProvider
+        final topProducts = receiptProvider.getTopProducts(limit: 5);
+        return widgets.buildTopProductsTable(context, topProducts);
 
-        final topProducts = productData.values.toList()
-          ..sort((a, b) => b['revenue'].compareTo(a['revenue']));
-        final displayedTopProducts = topProducts.take(5).toList();
-
-        return widgets.buildTopProductsTable(context, displayedTopProducts);
-      case 'top_categories': // Přidáno
-        final List<Map<String, dynamic>> topCategories = _getTopCategories(receiptProvider);
+      case 'top_categories':
+      // Zavolání nově definované metody v ReceiptProvider
+        final topCategories = receiptProvider.getTopCategories(
+          limit: 5,
+          productProvider: productProvider,
+        );
         return widgets.buildTopCategoriesTable(context, topCategories);
+
       case 'hourly_graph':
         return widgets.buildHourlyRevenueChart(context, receiptProvider);
+
       case 'payment_pie_chart':
         return widgets.buildDynamicPieChart(context, receiptProvider, localizations);
+
       case 'today_revenue':
         final double todayRevenue = receiptProvider.receipts.fold(
           0.0,
@@ -336,117 +337,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return widgets.buildTodayRevenueBlock(context, todayRevenue, isEditMode: isEditMode);
 
       default:
-        return const Text('Neznámý typ widgetu');
+        return Text(localizations.translate('unknownWidgetType'));
     }
-  }
-
-  // Přidání Metody _getTopCategories
-  List<Map<String, dynamic>> _getTopCategories(ReceiptProvider receiptProvider) {
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
-    Map<String, Map<String, dynamic>> categoryMap = {};
-
-    for (var receipt in receiptProvider.receipts) {
-      if (receipt['items'] != null && receipt['items'] is List) {
-        for (var item in receipt['items']) {
-          String productName = item['text'];
-          Product? product = productProvider.getProductByName(productName);
-
-          // Získání kategorie produktu
-          String category = product?.categoryName ?? 'Uncategorized'; // Upravte podle vaší struktury produktu
-
-          // Debug: Vytisknout kategorii, množství a cenu položky
-          print('Processing item: $productName, Category: $category, Quantity: ${item['quantity']}, Price: ${item['itemPrice']}');
-
-          // Změna typu z int na double pro quantity a price
-          double quantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
-          double price = (item['itemPrice'] as num?)?.toDouble() ?? 0.0;
-          double revenue = quantity * price;
-
-          if (categoryMap.containsKey(category)) {
-            categoryMap[category]!['quantity'] += quantity;
-            categoryMap[category]!['revenue'] += revenue;
-          } else {
-            categoryMap[category] = {
-              'name': category,
-              'quantity': quantity,
-              'revenue': revenue,
-            };
-          }
-        }
-      }
-    }
-
-    // Debug: Vytisknout agregovaná data kategorií
-    print('Aggregated Categories:');
-    categoryMap.forEach((key, value) {
-      print('Category: $key, Quantity: ${value['quantity']}, Revenue: ${value['revenue']}');
-    });
-
-    // Převést mapu na list a seřadit podle tržby sestupně
-    List<Map<String, dynamic>> sortedCategories = categoryMap.values.toList()
-      ..sort((a, b) => b['revenue'].compareTo(a['revenue']));
-
-    // Vezmeme pouze top 5
-    List<Map<String, dynamic>> topCategories = sortedCategories.take(5).toList();
-
-    // Debug: Vytisknout top 5 kategorií
-    print('Top 5 Categories:');
-    topCategories.forEach((category) {
-      print('Name: ${category['name']}, Quantity: ${category['quantity']}, Revenue: ${category['revenue']}');
-    });
-
-    return topCategories;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          localizations.translate('dashboardTitle'),
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.grey[850],
-        actions: [
-          if (!isEditMode)
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.white),
-              tooltip: 'Upravit dashboard',
-              onPressed: _enterEditMode,
-            ),
-          if (isEditMode) ...[
-            IconButton(
-              icon: const Icon(Icons.check, color: Colors.white),
-              tooltip: 'Ukončit úpravy',
-              onPressed: _exitEditMode,
-            ),
-            IconButton(
-              icon: const Icon(Icons.add, color: Colors.white),
-              tooltip: 'Přidat nový prvek',
-              onPressed: _showAddWidgetDialog,
-            ),
-          ]
-        ],
-      ),
-      body: FutureBuilder<void>(
-        future: _fetchData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                '${localizations.translate('errorLoadingData')}: ${snapshot.error}',
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          } else {
-            return _buildDashboardContent(context, localizations);
-          }
-        },
-      ),
-    );
   }
 }

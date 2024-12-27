@@ -1,10 +1,6 @@
-//lib/screens/settings_screen.dart
-
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../services/utility_services.dart';
-
-
 
 class SettingsScreen extends StatefulWidget {
   final Future<void> Function(String) updateApiKey;
@@ -24,7 +20,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _apiKeyController = TextEditingController();
   String? _savedApiKey;
 
-  // Jazykové volby
   final Map<String, String> _languageOptions = {
     'cs': 'Čeština',
     'en': 'English',
@@ -43,7 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final savedLanguageCode = await StorageService.getLanguageCode();
     setState(() {
       _savedApiKey = savedApiKey;
-      _currentLanguageCode = savedLanguageCode ?? 'cs'; // Výchozí jazyk: Čeština
+      _currentLanguageCode = savedLanguageCode ?? 'cs';
     });
     _apiKeyController.text = savedApiKey ?? '';
   }
@@ -77,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.translate('settingsTitle'),
-        style: const TextStyle(color: Colors.white),),
+            style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.grey[850],
       ),
       body: Padding(
@@ -105,7 +100,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 16.0),
                 child: Text(
-                  localizations.translate('currentApiKey').replaceFirst('{apiKey}', _savedApiKey!),
+                  localizations
+                      .translate('currentApiKey')
+                      .replaceFirst('{apiKey}', _savedApiKey!),
                   style: const TextStyle(color: Colors.grey),
                 ),
               ),
@@ -117,15 +114,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16.0),
             DropdownButtonFormField<String>(
               value: _currentLanguageCode,
-              decoration: const InputDecoration(
-                labelText: 'Vyberte jazyk',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: localizations.translate('selectLanguage'),
+                border: const OutlineInputBorder(),
               ),
               items: _languageOptions.entries
-                  .map((entry) => DropdownMenuItem<String>(
-                value: entry.key,
-                child: Text(entry.value),
-              ))
+                  .map(
+                    (entry) => DropdownMenuItem<String>(
+                  value: entry.key,
+                  child: Text(entry.value),
+                ),
+              )
                   .toList(),
               onChanged: _changeLanguage,
             ),

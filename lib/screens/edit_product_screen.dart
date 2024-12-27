@@ -1,12 +1,10 @@
-//lib/screens/edit_product_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../providers/product_provider.dart';
 import '../models/product.dart';
 import '../services/api_service.dart';
 import '../l10n/app_localizations.dart';
+import '../services/utility_services.dart'; // Důležité pro načtení API klíče ze StorageService
 
 class EditProductScreen extends StatefulWidget {
   final List<Map<String, dynamic>> categories;
@@ -29,6 +27,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
   String? _selectedTaxId;
   int _selectedColor = 1;
   bool _onSale = true;
+
   List<Map<String, dynamic>> _taxSettings = [];
 
   final TextEditingController _nameController = TextEditingController();
@@ -44,7 +43,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
     // Rozlišení mezi edit, new a copy:
     if (widget.product != null) {
-      // Když existuje widget.product
       // a) je to EDIT (widget.isCopy == false)
       // b) je to COPY (widget.isCopy == true)
       //
@@ -62,18 +60,21 @@ class _EditProductScreenState extends State<EditProductScreen> {
       // Pokud je to COPY, vynulujeme itemId,
       // aby API bralo tento produkt jako nový (a vygenerovalo nové itemId).
       if (widget.isCopy) {
-        // Případně můžete vynulovat i code, sku apod.
-        // Ale obvykle se duplikují i tyto hodnoty - je to na vás.
+        // Případně vynulování dalších polí, pokud by bylo žádoucí.
       }
     }
-    // Pokud je product == null => je to vyloženě nový produkt
-    // => formulář je prázdný, nic nevyplňujeme
+    // Pokud je product == null => je to nový produkt -> formulář je prázdný
   }
 
   Future<void> _loadTaxSettings() async {
-    const apiKey = 'pak-equeghBq1UtfHWfDqtO52SC9ascosA';
     try {
-      final taxSettings = await ApiService.fetchTaxSettings(apiKey);
+      final storedApiKey = await StorageService.getApiKey();
+      if (storedApiKey == null || storedApiKey.isEmpty) {
+        print('Error: API klíč není k dispozici.');
+        return;
+      }
+
+      final taxSettings = await ApiService.fetchTaxSettings(storedApiKey);
       setState(() {
         _taxSettings = taxSettings;
       });
@@ -132,6 +133,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
               const SizedBox(height: 16),
               _buildOnSaleSwitch(localizations),
               const SizedBox(height: 16),
+              // SKU lze nyní zadávat jako běžný text (může obsahovat písmena, symboly atd.)
               _buildTextField(localizations.translate('sku'), _skuController),
               const SizedBox(height: 16),
               _buildTextField(localizations.translate('productCode'), _codeController, isNumber: true),
@@ -203,7 +205,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
       Colors.red,
       Colors.brown.shade300,
     ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -303,12 +304,11 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
     // Pokud je to nová entita => itemId prázdný (aby se na serveru vytvořil nový)
     final itemId = isCreating ? '' : (widget.product?.itemId ?? '');
-
     final newProduct = Product(
       itemId: itemId,
       itemName: _nameController.text,
       price: double.parse(_priceController.text),
-      sku: _skuController.text,
+      sku: _skuController.text,   // SKU jako string
       code: int.tryParse(_codeController.text) ?? 0,
       note: _noteController.text,
       categoryId: _selectedCategoryId!,
@@ -321,7 +321,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     );
 
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
-
     if (isCreating) {
       // Vytvoření nového produktu
       await productProvider.addProduct(newProduct);
