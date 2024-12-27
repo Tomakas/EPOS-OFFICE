@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:petra2/services/utility_services.dart';
+import '../services/utility_services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/receipt_provider.dart';

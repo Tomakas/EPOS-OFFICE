@@ -10,7 +10,6 @@ import '../providers/product_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../screens/product_list_screen.dart';
 import '../screens/receipt_list_screen.dart';
-import '../screens/product_list_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final Future<void> Function(String) updateApiKey;

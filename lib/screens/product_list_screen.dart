@@ -82,11 +82,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   void _loadStockData() async {
-    const apiKey = 'pak-equeghBq1UtfHWfDqtO52SC9ascosA'; // Původně zde byl klíč. Ideálně by i toto mělo být načteno z úložiště.
-    // Ponechávám pro ukázku, ale měla byste to řešit stejně jako jinde, např.:
-    // final apiKey = await StorageService.getApiKey();
+    final storedApiKey = await StorageService.getApiKey();
+    if (storedApiKey == null || storedApiKey.isEmpty) {
+      print('Error: API klíč není k dispozici.');
+      return;
+    }
     try {
-      final stockList = await ApiService.fetchActualStockData(apiKey);
+      final stockList = await ApiService.fetchActualStockData(storedApiKey);
       setState(() {
         stockData = {
           for (var item in stockList)
